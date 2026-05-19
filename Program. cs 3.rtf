@@ -1,0 +1,168 @@
+{\rtf1\ansi\ansicpg1251\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 using System;\
+using System.IO;\
+using System.Text.Json;\
+using System.Text.Json.Serialization;\
+\
+namespace TemperatureControlSystem\
+\{\
+    public class TemperatureSensor\
+    \{\
+        // \uc0\u1057 \u1090 \u1072 \u1090 \u1080 \u1095 \u1085 \u1077  \u1087 \u1086 \u1083 \u1077  \u1076 \u1083 \u1103  \u1087 \u1110 \u1076 \u1088 \u1072 \u1093 \u1091 \u1085 \u1082 \u1091  \u1082 \u1110 \u1083 \u1100 \u1082 \u1086 \u1089 \u1090 \u1110  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1080 \u1093  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1110 \u1074 \
+        private static int _sensorCount = 0;\
+\
+        // \uc0\u1055 \u1088 \u1080 \u1093 \u1086 \u1074 \u1072 \u1085 \u1110  \u1087 \u1086 \u1083 \u1103  (private) \u1079  \u1072 \u1090 \u1088 \u1080 \u1073 \u1091 \u1090 \u1072 \u1084 \u1080  \u1076 \u1083 \u1103  JSON\
+        [JsonInclude] private readonly int _id; \
+        [JsonInclude] private double _currentTemperature;\
+        [JsonInclude] private double _minLimit;\
+        [JsonInclude] private double _maxLimit;\
+\
+        // \uc0\u1042 \u1083 \u1072 \u1089 \u1090 \u1080 \u1074 \u1110 \u1089 \u1090 \u1100  \u1090 \u1110 \u1083 \u1100 \u1082 \u1080  \u1076 \u1083 \u1103  \u1095 \u1080 \u1090 \u1072 \u1085 \u1085 \u1103  \u1076 \u1083 \u1103  \u1086 \u1090 \u1088 \u1080 \u1084 \u1072 \u1085 \u1085 \u1103  \u1087 \u1086 \u1090 \u1086 \u1095 \u1085 \u1086 \u1111  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1080  (property get)\
+        [JsonIgnore]\
+        public double CurrentTemperature\
+        \{\
+            get \{ return _currentTemperature; \}\
+        \}\
+\
+        // \uc0\u1050 \u1086 \u1085 \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1086 \u1088  \u8470 1: \u1047  \u1087 \u1086 \u1095 \u1072 \u1090 \u1082 \u1086 \u1074 \u1086 \u1102  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1086 \u1102 \
+        public TemperatureSensor(double initialTemperature, double minLimit, double maxLimit)\
+        \{\
+            _sensorCount++; \
+            _id = _sensorCount; // \uc0\u1055 \u1088 \u1080 \u1089 \u1074 \u1086 \u1102 \u1108 \u1084 \u1086  \u1091 \u1085 \u1110 \u1082 \u1072 \u1083 \u1100 \u1085 \u1080 \u1081  \u1085 \u1086 \u1084 \u1077 \u1088 \
+            _currentTemperature = initialTemperature;\
+            _minLimit = minLimit;\
+            _maxLimit = maxLimit;\
+        \}\
+\
+        // \uc0\u1050 \u1086 \u1085 \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1086 \u1088  \u8470 2: \u1041 \u1077 \u1079  \u1087 \u1086 \u1095 \u1072 \u1090 \u1082 \u1086 \u1074 \u1086 \u1111  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1080  (\u1074 \u1089 \u1090 \u1072 \u1085 \u1086 \u1074 \u1083 \u1102 \u1108 \u1090 \u1100 \u1089 \u1103  \u1074  0)\
+        public TemperatureSensor(double minLimit, double maxLimit) \
+            : this(0.0, minLimit, maxLimit)\
+        \{\
+        \}\
+\
+        // \uc0\u1057 \u1087 \u1077 \u1094 \u1110 \u1072 \u1083 \u1100 \u1085 \u1080 \u1081  \u1082 \u1086 \u1085 \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1086 \u1088  \u1076 \u1083 \u1103  \u1076 \u1077 \u1089 \u1077 \u1088 \u1110 \u1072 \u1083 \u1110 \u1079 \u1072 \u1094 \u1110 \u1111  JSON (\u1076 \u1086 \u1079 \u1074 \u1086 \u1083 \u1103 \u1108  \u1074 \u1110 \u1076 \u1085 \u1086 \u1074 \u1080 \u1090 \u1080  private readonly \u1087 \u1086 \u1083 \u1103 )\
+        [JsonConstructor]\
+        private TemperatureSensor(int id, double currentTemperature, double minLimit, double maxLimit)\
+        \{\
+            _id = id;\
+            _currentTemperature = currentTemperature;\
+            _minLimit = minLimit;\
+            _maxLimit = maxLimit;\
+            \
+            // \uc0\u1071 \u1082 \u1097 \u1086  \u1074 \u1110 \u1076 \u1085 \u1086 \u1074 \u1083 \u1077 \u1085 \u1080 \u1081  ID \u1073 \u1110 \u1083 \u1100 \u1096 \u1080 \u1081  \u1079 \u1072  \u1087 \u1086 \u1090 \u1086 \u1095 \u1085 \u1080 \u1081  \u1083 \u1110 \u1095 \u1080 \u1083 \u1100 \u1085 \u1080 \u1082 , \u1082 \u1086 \u1088 \u1080 \u1075 \u1091 \u1102  \u1083 \u1110 \u1095 \u1080 \u1083 \u1100 \u1085 \u1080 \u1082 \
+        \
+            if (id > _sensorCount)\
+            \{\
+                _sensorCount = id;\
+            \}\
+        \}\
+\
+        // \uc0\u1052 \u1077 \u1090 \u1086 \u1076  \u1086 \u1085 \u1086 \u1074 \u1083 \u1077 \u1085 \u1085 \u1103  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1080 \
+        public void UpdateTemperature(double newTemperature)\
+        \{\
+            _currentTemperature = newTemperature;\
+            Console.WriteLine($"[\uc0\u1044 \u1072 \u1090 \u1095 \u1080 \u1082  #\{_id\}]: \u1058 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1091  \u1086 \u1085 \u1086 \u1074 \u1083 \u1077 \u1085 \u1086  \u1076 \u1086  \{_currentTemperature\}\'b0C");\
+        \}\
+\
+        // \uc0\u1052 \u1077 \u1090 \u1086 \u1076  \u1087 \u1077 \u1088 \u1077 \u1074 \u1110 \u1088 \u1082 \u1080 , \u1095 \u1080  \u1079 \u1085 \u1072 \u1093 \u1086 \u1076 \u1080 \u1090 \u1100 \u1089 \u1103  \u1079 \u1085 \u1072 \u1095 \u1077 \u1085 \u1085 \u1103  \u1074  \u1076 \u1086 \u1087 \u1091 \u1089 \u1090 \u1080 \u1084 \u1080 \u1093  \u1084 \u1077 \u1078 \u1072 \u1093 \
+        public bool IsTemperatureSafe()\
+        \{\
+            return _currentTemperature >= _minLimit && _currentTemperature <= _maxLimit;\
+        \}\
+\
+        // \uc0\u1057 \u1090 \u1072 \u1090 \u1080 \u1095 \u1085 \u1080 \u1081  \u1084 \u1077 \u1090 \u1086 \u1076  \u1076 \u1083 \u1103  \u1086 \u1090 \u1088 \u1080 \u1084 \u1072 \u1085 \u1085 \u1103  \u1082 \u1110 \u1083 \u1100 \u1082 \u1086 \u1089 \u1090 \u1110  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1080 \u1093  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1110 \u1074 \
+        public static int GetSensorCount()\
+        \{\
+            return _sensorCount;\
+        \}\
+\
+        // \uc0\u1055 \u1077 \u1088 \u1077 \u1074 \u1080 \u1079 \u1085 \u1072 \u1095 \u1077 \u1085 \u1085 \u1103  \u1084 \u1077 \u1090 \u1086 \u1076 \u1091  ToString()\
+        public override string ToString()\
+        \{\
+            string status = IsTemperatureSafe() ? "\uc0\u1053 \u1054 \u1056 \u1052 \u1040 " : "\u1059 \u1042 \u1040 \u1043 \u1040 ! \u1053 \u1045 \u1041 \u1045 \u1047 \u1055 \u1045 \u1050 \u1040 ";\
+            return $"\uc0\u1044 \u1072 \u1090 \u1095 \u1080 \u1082  #\{_id\} | \u1055 \u1086 \u1090 \u1086 \u1095 \u1085 \u1072  t: \{_currentTemperature\}\'b0C | \u1052 \u1077 \u1078 \u1110 : [\{_minLimit\}\'b0C ... \{_maxLimit\}\'b0C] | \u1057 \u1090 \u1072 \u1090 \u1091 \u1089 : \{status\}";\
+        \}\
+\
+        // \uc0\u1047 \u1040 \u1042 \u1044 \u1040 \u1053 \u1053 \u1071  2: \u1052 \u1045 \u1058 \u1054 \u1044 \u1048  JSON \u1057 \u1045 \u1056 \u1030 \u1040 \u1051 \u1030 \u1047 \u1040 \u1062 \u1030 \u1031 \
+\
+        // \uc0\u1052 \u1077 \u1090 \u1086 \u1076  1. \u1047 \u1073 \u1077 \u1088 \u1110 \u1075 \u1072 \u1108  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1080 \u1081  \u1086 \u1073 \'92\u1108 \u1082 \u1090  \u1082 \u1083 \u1072 \u1089 \u1091  \u1091  JSON \u1092 \u1072 \u1081 \u1083  \
+        public static void SaveToJson(string filePath, TemperatureSensor sensor)\
+        \{\
+            var options = new JsonSerializerOptions \{ WriteIndented = true \};\
+            string jsonString = JsonSerializer.Serialize(sensor, options);\
+            File.WriteAllText(filePath, jsonString);\
+            Console.WriteLine($"[\uc0\u1057 \u1080 \u1089 \u1090 \u1077 \u1084 \u1072 ]: \u1044 \u1072 \u1090 \u1095 \u1080 \u1082  #\{sensor._id\} \u1091 \u1089 \u1087 \u1110 \u1096 \u1085 \u1086  \u1079 \u1073 \u1077 \u1088 \u1077 \u1078 \u1077 \u1085 \u1086  \u1091  \u1092 \u1072 \u1081 \u1083  '\{filePath\}'.");\
+        \}\
+\
+        // \uc0\u1052 \u1077 \u1090 \u1086 \u1076  2. \u1042 \u1110 \u1076 \u1082 \u1088 \u1080 \u1074 \u1072 \u1108  JSON \u1092 \u1072 \u1081 \u1083  \u1079  \u1076 \u1072 \u1085 \u1080 \u1084 \u1080  \u1090 \u1072  \u1089 \u1090 \u1074 \u1086 \u1088 \u1102 \u1108  \u1086 \u1073 \'92\u1108 \u1082 \u1090  \u1082 \u1083 \u1072 \u1089 \u1091 \
+        public static TemperatureSensor LoadFromJson(string filePath)\
+        \{\
+            if (!File.Exists(filePath))\
+            \{\
+                throw new FileNotFoundException($"\uc0\u1060 \u1072 \u1081 \u1083  \{filePath\} \u1085 \u1077  \u1079 \u1085 \u1072 \u1081 \u1076 \u1077 \u1085 \u1086 !");\
+            \}\
+\
+            string jsonString = File.ReadAllText(filePath);\
+            TemperatureSensor deserializedSensor = JsonSerializer.Deserialize<TemperatureSensor>(jsonString);\
+            Console.WriteLine($"[\uc0\u1057 \u1080 \u1089 \u1090 \u1077 \u1084 \u1072 ]: \u1044 \u1072 \u1090 \u1095 \u1080 \u1082  \u1091 \u1089 \u1087 \u1110 \u1096 \u1085 \u1086  \u1079 \u1072 \u1074 \u1072 \u1085 \u1090 \u1072 \u1078 \u1077 \u1085 \u1086  \u1090 \u1072  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1086  \u1079  \u1092 \u1072 \u1081 \u1083 \u1091  '\{filePath\}'.");\
+            return deserializedSensor;\
+        \}\
+    \}\
+\
+    class Program\
+    \{\
+        static void Main(string[] args)\
+        \{\
+            // \uc0\u1053 \u1072 \u1083 \u1072 \u1096 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1082 \u1086 \u1076 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1082 \u1086 \u1085 \u1089 \u1086 \u1083 \u1110 \
+            Console.OutputEncoding = System.Text.Encoding.UTF8;\
+            string fileName = "sensor_data.json";\
+\
+            Console.WriteLine("\uc0\u1058 \u1045 \u1057 \u1058 \u1059 \u1042 \u1040 \u1053 \u1053 \u1071  \u1047 \u1040 \u1042 \u1044 \u1040 \u1053 \u1053 \u1071  1");\
+            Console.WriteLine($"\uc0\u1055 \u1086 \u1095 \u1072 \u1090 \u1082 \u1086 \u1074 \u1072  \u1082 \u1110 \u1083 \u1100 \u1082 \u1110 \u1089 \u1090 \u1100  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1110 \u1074  \u1091  \u1089 \u1080 \u1089 \u1090 \u1077 \u1084 \u1110 : \{TemperatureSensor.GetSensorCount()\}");\
+\
+            // \uc0\u1057 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1085 \u1103  \u1087 \u1077 \u1088 \u1096 \u1086 \u1075 \u1086  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082  (\u1079  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1086 \u1102  22.5)\
+            TemperatureSensor sensor1 = new TemperatureSensor(22.5, 18.0, 25.0);\
+            // \uc0\u1057 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1085 \u1103  \u1076 \u1088 \u1091 \u1075 \u1086 \u1075 \u1086  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082  (\u1073 \u1077 \u1079  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1080  -> \u1073 \u1091 \u1076 \u1077  0)\
+            TemperatureSensor sensor2 = new TemperatureSensor(-5.0, 10.0);\
+\
+            Console.WriteLine(sensor1);\
+            Console.WriteLine(sensor2);\
+            Console.WriteLine($"\uc0\u1050 \u1110 \u1083 \u1100 \u1082 \u1110 \u1089 \u1090 \u1100  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1110 \u1074  \u1087 \u1110 \u1089 \u1083 \u1103  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1085 \u1103 : \{TemperatureSensor.GetSensorCount()\}\\n");\
+\
+            // \uc0\u1058 \u1077 \u1089 \u1090  \u1074 \u1083 \u1072 \u1089 \u1090 \u1080 \u1074 \u1086 \u1089 \u1090 \u1110  \u1090 \u1072  \u1084 \u1077 \u1090 \u1086 \u1076 \u1110 \u1074 \
+            sensor1.UpdateTemperature(26.2); // \uc0\u1042 \u1080 \u1093 \u1110 \u1076  \u1079 \u1072  \u1084 \u1077 \u1078 \u1110  (\u1084 \u1072 \u1082 \u1089  25.0)\
+            Console.WriteLine($"\uc0\u1063 \u1080  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1072  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1072  #1 \u1074  \u1085 \u1086 \u1088 \u1084 \u1110 ? \{sensor1.IsTemperatureSafe()\}");\
+            Console.WriteLine(sensor1);\
+\
+\
+            Console.WriteLine("\\n\uc0\u1058 \u1045 \u1057 \u1058 \u1059 \u1042 \u1040 \u1053 \u1053 \u1071  \u1047 \u1040 \u1042 \u1044 \u1040 \u1053 \u1053 \u1071  2 (JSON)");\
+            \
+            // \uc0\u1058 \u1077 \u1089 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1052 \u1077 \u1090 \u1086 \u1076 \u1091  1: \u1047 \u1073 \u1077 \u1088 \u1077 \u1078 \u1077 \u1085 \u1085 \u1103  \u1091  JSON (\u1047 \u1073 \u1077 \u1088 \u1110 \u1075 \u1072 \u1102  \u1089 \u1090 \u1072 \u1085  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1072  #1)\
+            TemperatureSensor.SaveToJson(fileName, sensor1);\
+\
+            // \uc0\u1071 \u1082  \u1074 \u1080 \u1075 \u1083 \u1103 \u1076 \u1072 \u1108  \u1089 \u1072 \u1084  JSON-\u1092 \u1072 \u1081 \u1083  \u1074 \u1089 \u1077 \u1088 \u1077 \u1076 \u1080 \u1085 \u1110 \
+            Console.WriteLine("\\n\uc0\u1042 \u1084 \u1110 \u1089 \u1090  \u1079 \u1075 \u1077 \u1085 \u1077 \u1088 \u1086 \u1074 \u1072 \u1085 \u1086 \u1075 \u1086  JSON-\u1092 \u1072 \u1081 \u1083 \u1091 :");\
+            Console.WriteLine(File.ReadAllText(fileName));\
+\
+            // \uc0\u1058 \u1077 \u1089 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1052 \u1077 \u1090 \u1086 \u1076 \u1091  2: \u1047 \u1072 \u1074 \u1072 \u1085 \u1090 \u1072 \u1078 \u1077 \u1085 \u1085 \u1103  \u1079  JSON \u1090 \u1072  \u1089 \u1090 \u1074 \u1086 \u1088 \u1077 \u1085 \u1085 \u1103  \u1085 \u1086 \u1074 \u1086 \u1075 \u1086  \u1086 \u1073 '\u1108 \u1082 \u1090 \u1072 \
+            Console.WriteLine("\uc0\u1057 \u1087 \u1088 \u1086 \u1073 \u1072  \u1076 \u1077 \u1089 \u1077 \u1088 \u1110 \u1072 \u1083 \u1110 \u1079 \u1072 \u1094 \u1110 \u1111 ...");\
+            TemperatureSensor loadedSensor = TemperatureSensor.LoadFromJson(fileName);\
+\
+            // \uc0\u1055 \u1077 \u1088 \u1077 \u1074 \u1110 \u1088 \u1082 \u1072 , \u1095 \u1080  \u1085 \u1086 \u1074 \u1080 \u1081  \u1086 \u1073 '\u1108 \u1082 \u1090  \u1084 \u1072 \u1108  \u1090 \u1110  \u1089 \u1072 \u1084 \u1110  \u1076 \u1072 \u1085 \u1110  \u1090 \u1072  \u1095 \u1080  \u1087 \u1088 \u1072 \u1094 \u1102 \u1102 \u1090 \u1100  \u1081 \u1086 \u1075 \u1086  \u1084 \u1077 \u1090 \u1086 \u1076 \u1080 \
+            Console.WriteLine("\\n\uc0\u1055 \u1077 \u1088 \u1077 \u1074 \u1110 \u1088 \u1082 \u1072  \u1079 \u1072 \u1074 \u1072 \u1085 \u1090 \u1072 \u1078 \u1077 \u1085 \u1086 \u1075 \u1086  \u1076 \u1072 \u1090 \u1095 \u1080 \u1082 \u1072 :");\
+            Console.WriteLine(loadedSensor);\
+            \
+            // \uc0\u1055 \u1077 \u1088 \u1077 \u1074 \u1110 \u1088 \u1082 \u1072 , \u1097 \u1086  \u1094 \u1077  \u1087 \u1086 \u1074 \u1085 \u1086 \u1094 \u1110 \u1085 \u1085 \u1080 \u1081  \u1086 \u1073 '\u1108 \u1082 \u1090  \u1110  \u1084 \u1086 \u1078 \u1085 \u1072  \u1079 \u1085 \u1086 \u1074 \u1091  \u1086 \u1085 \u1086 \u1074 \u1083 \u1102 \u1074 \u1072 \u1090 \u1080  \u1081 \u1086 \u1075 \u1086  \u1090 \u1077 \u1084 \u1087 \u1077 \u1088 \u1072 \u1090 \u1091 \u1088 \u1091 \
+            loadedSensor.UpdateTemperature(21.0); // \uc0\u1055 \u1086 \u1074 \u1077 \u1088 \u1085 \u1077 \u1085 \u1085 \u1103  \u1074  \u1085 \u1086 \u1088 \u1084 \u1091 \
+            Console.WriteLine(loadedSensor);\
+\
+            Console.ReadLine();\
+        \}\
+    \}\
+\}}

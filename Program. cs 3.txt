@@ -1,0 +1,161 @@
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace TemperatureControlSystem
+{
+    public class TemperatureSensor
+    {
+        // Статичне поле для підрахунку кількості створених датчиків
+        private static int _sensorCount = 0;
+
+        // Приховані поля (private) з атрибутами для JSON
+        [JsonInclude] private readonly int _id; 
+        [JsonInclude] private double _currentTemperature;
+        [JsonInclude] private double _minLimit;
+        [JsonInclude] private double _maxLimit;
+
+        // Властивість тільки для читання для отримання поточної температури (property get)
+        [JsonIgnore]
+        public double CurrentTemperature
+        {
+            get { return _currentTemperature; }
+        }
+
+        // Конструктор №1: З початковою температурою
+        public TemperatureSensor(double initialTemperature, double minLimit, double maxLimit)
+        {
+            _sensorCount++; 
+            _id = _sensorCount; // Присвоюємо унікальний номер
+            _currentTemperature = initialTemperature;
+            _minLimit = minLimit;
+            _maxLimit = maxLimit;
+        }
+
+        // Конструктор №2: Без початкової температури (встановлюється в 0)
+        public TemperatureSensor(double minLimit, double maxLimit) 
+            : this(0.0, minLimit, maxLimit)
+        {
+        }
+
+        // Спеціальний конструктор для десеріалізації JSON (дозволяє відновити private readonly поля)
+        [JsonConstructor]
+        private TemperatureSensor(int id, double currentTemperature, double minLimit, double maxLimit)
+        {
+            _id = id;
+            _currentTemperature = currentTemperature;
+            _minLimit = minLimit;
+            _maxLimit = maxLimit;
+            
+            // Якщо відновлений ID більший за поточний лічильник, коригую лічильник
+        
+            if (id > _sensorCount)
+            {
+                _sensorCount = id;
+            }
+        }
+
+        // Метод оновлення температури
+        public void UpdateTemperature(double newTemperature)
+        {
+            _currentTemperature = newTemperature;
+            Console.WriteLine($"[Датчик #{_id}]: Температуру оновлено до {_currentTemperature}°C");
+        }
+
+        // Метод перевірки, чи знаходиться значення в допустимих межах
+        public bool IsTemperatureSafe()
+        {
+            return _currentTemperature >= _minLimit && _currentTemperature <= _maxLimit;
+        }
+
+        // Статичний метод для отримання кількості створених датчиків
+        public static int GetSensorCount()
+        {
+            return _sensorCount;
+        }
+
+        // Перевизначення методу ToString()
+        public override string ToString()
+        {
+            string status = IsTemperatureSafe() ? "НОРМА" : "УВАГА! НЕБЕЗПЕКА";
+            return $"Датчик #{_id} | Поточна t: {_currentTemperature}°C | Межі: [{_minLimit}°C ... {_maxLimit}°C] | Статус: {status}";
+        }
+
+        // ЗАВДАННЯ 2: МЕТОДИ JSON СЕРІАЛІЗАЦІЇ
+
+        // Метод 1. Зберігає створений об’єкт класу у JSON файл 
+        public static void SaveToJson(string filePath, TemperatureSensor sensor)
+        {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            string jsonString = JsonSerializer.Serialize(sensor, options);
+            File.WriteAllText(filePath, jsonString);
+            Console.WriteLine($"[Система]: Датчик #{sensor._id} успішно збережено у файл '{filePath}'.");
+        }
+
+        // Метод 2. Відкриває JSON файл з даними та створює об’єкт класу
+        public static TemperatureSensor LoadFromJson(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"Файл {filePath} не знайдено!");
+            }
+
+            string jsonString = File.ReadAllText(filePath);
+            TemperatureSensor deserializedSensor = JsonSerializer.Deserialize<TemperatureSensor>(jsonString);
+            Console.WriteLine($"[Система]: Датчик успішно завантажено та створено з файлу '{filePath}'.");
+            return deserializedSensor;
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Налаштування кодування консолі
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            string fileName = "sensor_data.json";
+
+            Console.WriteLine("ТЕСТУВАННЯ ЗАВДАННЯ 1");
+            Console.WriteLine($"Початкова кількість датчиків у системі: {TemperatureSensor.GetSensorCount()}");
+
+            // Створення першого датчик (з температурою 22.5)
+            TemperatureSensor sensor1 = new TemperatureSensor(22.5, 18.0, 25.0);
+            // Створення другого датчик (без температури -> буде 0)
+            TemperatureSensor sensor2 = new TemperatureSensor(-5.0, 10.0);
+
+            Console.WriteLine(sensor1);
+            Console.WriteLine(sensor2);
+            Console.WriteLine($"Кількість датчиків після створення: {TemperatureSensor.GetSensorCount()}\n");
+
+            // Тест властивості та методів
+            sensor1.UpdateTemperature(26.2); // Вихід за межі (макс 25.0)
+            Console.WriteLine($"Чи температура датчика #1 в нормі? {sensor1.IsTemperatureSafe()}");
+            Console.WriteLine(sensor1);
+
+
+            Console.WriteLine("\nТЕСТУВАННЯ ЗАВДАННЯ 2 (JSON)");
+            
+            // Тестування Методу 1: Збереження у JSON (Зберігаю стан датчика #1)
+            TemperatureSensor.SaveToJson(fileName, sensor1);
+
+            // Як виглядає сам JSON-файл всередині
+            Console.WriteLine("\nВміст згенерованого JSON-файлу:");
+            Console.WriteLine(File.ReadAllText(fileName));
+
+            // Тестування Методу 2: Завантаження з JSON та створення нового об'єкта
+            Console.WriteLine("Спроба десеріалізації...");
+            TemperatureSensor loadedSensor = TemperatureSensor.LoadFromJson(fileName);
+
+            // Перевірка, чи новий об'єкт має ті самі дані та чи працюють його методи
+            Console.WriteLine("\nПеревірка завантаженого датчика:");
+            Console.WriteLine(loadedSensor);
+            
+            // Перевірка, що це повноцінний об'єкт і можна знову оновлювати його температуру
+            loadedSensor.UpdateTemperature(21.0); // Повернення в норму
+            Console.WriteLine(loadedSensor);
+
+            Console.ReadLine();
+        }
+    }
+}
